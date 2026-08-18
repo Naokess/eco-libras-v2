@@ -14,9 +14,22 @@ describe('AppController', () => {
     appController = app.get<AppController>(AppController);
   });
 
-  describe('root', () => {
-    it('should return "Hello World!"', () => {
-      expect(appController.getHello()).toBe('Hello World!');
+  describe('GET /health', () => {
+    it('deve retornar status ok', () => {
+      const result = appController.getHealth();
+      expect(result.status).toBe('ok');
+      expect(result.service).toBe('eco-libras-api');
+    });
+  });
+
+  describe('GET /term', () => {
+    it('deve retornar o termo de exemplo validado pelo shared', () => {
+      const result = appController.getTerm();
+      expect(result).toEqual({
+        term: 'Libras',
+        slug: 'libras',
+        definition: 'Língua Brasileira de Sinais.',
+      });
     });
   });
 });

@@ -1,0 +1,82 @@
+# ============================================================
+# docker-compose.yml — ECO-Libras
+# Sobe as 3 camadas da Fase 0: api (NestJS) + postgres + web (Next.js)
+#
+# Uso:
+#   cp .env.example .env        (primeira vez)
+#   docker compose up --build   (sobe api + postgres + web)
+#
+# Critério de aceite da Fase 0:
+#   - web  → http://localhost:3000   (home OK)
+#   - api  → http://localhost:3001/api/v1/health
+#   - postgres na rede interna (porta 5432, só dentro do compose)
+# ============================================================
+
+services:
+  # ---------- Banco de dados ----------
+  postgres:
+    image: postgres:16-alpine
+    container_name: eco-libras-postgres
+    # Workaround: sem isso, o profile AppArmor "docker-default" bloqueia o sinal
+    # de termínio/kill neste host, e `docker stop/restart` falha com
+    # "permission denied" (confirmado no kernel audit: apparmor DENIED signal).
+    # Com apparmor=unconfined o ciclo de vida (stop/restart/rm) volta a funcionar.
+    security_opt:
+      - apparmor=unconfined
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-eco_libras}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-eco_libras_dev}
+      POSTGRES_DB: ${POSTGRES_DB:-eco_libras}
+    ports:
+      # Exposição ao host é opcional; útil para o Prisma/seed rodarem fora do container.
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-eco_libras} -d ${POSTGRES_DB:-eco_libras}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # ---------- Backend (NestJS) ----------
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    container_name: eco-libras-api
+    # Mesmo workaround de AppArmor do postgres (ciclo de vida do container).
+    security_opt:
+      - apparmor=unconfined
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: ${DATABASE_URL:-postgresql://eco_libras:eco_libras_dev@postgres:5432/eco_libras}
+    ports:
+      - "3001:3000"   # host:3001 → container:3000 (evita conflito com o web)
+
+  # ---------- Frontend (Next.js) ----------
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    container_name: eco-libras-web
+    # Mesmo workaround de AppArmor do postgres (ciclo de vida do container).
+    security_opt:
+      - apparmor=unconfined
+    restart: unless-stopped
+    depends_on:
+      - api
+    environment:
+      NODE_ENV: production
+      # Se o front chamar a API, use o nome do serviço do compose + porta interna
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3001}
+    ports:
+      - "3000:3000"   # host:3000 → container:3000 (porta principal do web)
+
+volumes:
+  postgres_data:

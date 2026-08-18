@@ -1,0 +1,13 @@
+# ============================================================
+# .dockerignore (raiz) — o que NÃO entra no contexto de build do Docker
+# ============================================================
+node_modules
+**/node_modules
+**/dist
+**/.next
+**/.git
+.git
+.env
+.env.local
+**/coverage
+*.log
