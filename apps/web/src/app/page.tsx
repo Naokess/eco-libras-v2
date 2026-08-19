@@ -1,10 +1,10 @@
-import { TermSchema, type Term } from "@eco-libras/shared";
+import { TermSchema, type Term } from '@eco-libras/shared';
 
 // Termo de exemplo — será validado pelo schema compartilhado do monorepo.
 const example: Term = TermSchema.parse({
-  term: "Libras",
-  slug: "libras",
-  definition: "Língua Brasileira de Sinais.",
+  term: 'Libras',
+  slug: 'libras',
+  definition: 'Língua Brasileira de Sinais.',
 });
 
 export default function Home() {
