@@ -11,6 +11,7 @@
     "format:check": "prettier --check .",
     "lint": "npm run lint --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present",
+    "build": "npm run build -w @eco-libras/shared && npm run build -w apps/api && npm run build -w apps/web",
     "prepare": "husky"
   },
   "devDependencies": {

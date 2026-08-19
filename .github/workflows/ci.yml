@@ -25,14 +25,15 @@ jobs:
       - name: Instalar dependências
         run: npm ci
 
+      # api e web dependem do dist de @eco-libras/shared; compilar antes
+      - name: Build do pacote compartilhado
+        run: npm run build -w @eco-libras/shared
+
       - name: Lint
         run: npm run lint
 
       - name: Typecheck
         run: npm run typecheck
 
-      - name: Build (api)
-        run: npm run build -w apps/api
-
-      - name: Build (web)
-        run: npm run build -w apps/web
+      - name: Build completo
+        run: npm run build
